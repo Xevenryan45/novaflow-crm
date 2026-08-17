@@ -1,10 +1,10 @@
-import { Boxes } from "react-icons/lu";
+import { LuBoxes } from "react-icons/lu";
 import { company } from "../../constants/company";
 
 export default function Logo() {
   return (
     <div className="flex items-center gap-3">
-      <Boxes
+      <LuBoxes
         size={30}
         className="text-blue-600"
       />

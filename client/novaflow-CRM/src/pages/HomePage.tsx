@@ -1,8 +1,9 @@
-import Navbar from "../components/layout/Navbar";
+import Stats from "../components/sections/Features";
 import Hero from "../components/sections/Hero";
 import TrustedCompanies from "../components/sections/TrustedCompanies";
-import Stats from "../components/sections/Stats";
 import Footer from "../components/layout/Footer";
+import Navbar from "../components/layout/Navbar";
+
 
 export default function HomePage() {
   return (
@@ -10,7 +11,7 @@ export default function HomePage() {
         <Navbar />
         <Hero />
         <TrustedCompanies />
-        <Stats /> 
+        <Stats />
         <Footer />
     </>
   )

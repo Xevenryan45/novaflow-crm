@@ -1,15 +1,19 @@
-import type { ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  ReactNode,
+} from "react";
 
-interface ButtonProps {
+interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   variant?: "primary" | "secondary";
-  onClick?: () => void;
 }
 
 function Button({
   children,
   variant = "primary",
-  onClick
+  className,
+  ...props
 }: ButtonProps) {
 
   const styles = {
@@ -22,14 +26,15 @@ function Button({
 
   return (
     <button
-      onClick={onClick}
       className={`
         px-6 py-3
         rounded-xl
         font-medium
         transition
         ${styles[variant]}
+        ${className ?? ""}
       `}
+      {...props}
     >
       {children}
     </button>

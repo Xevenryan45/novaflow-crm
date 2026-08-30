@@ -1,5 +1,6 @@
 import Container from '../common/Container'
 import Button from '../ui/Buttons'
+import ProductPreview from './ProductPreview'
 
 export default function Hero() {
   return (
@@ -23,6 +24,8 @@ export default function Hero() {
             </Button>
           </div>
         </div>
+
+        <ProductPreview className='mt-16' />
       </Container>
     </section>
   )

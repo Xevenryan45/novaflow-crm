@@ -34,7 +34,7 @@ export default function Navbar() {
 
                     <div className='hidden md:flex items-center gap-3'>
                         <Button>Sign-Up</Button>
-                        <Button>Get Started</Button>
+                        <Button variant='secondary'>Get Started</Button>
 
                     </div>
                     <Button

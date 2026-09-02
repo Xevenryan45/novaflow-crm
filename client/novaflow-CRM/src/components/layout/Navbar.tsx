@@ -6,7 +6,11 @@ import Button from '../ui/Buttons'
 import { useState, useEffect } from 'react'
 import { LuMenu, LuX } from 'react-icons/lu'
 
-export default function Navbar() {
+interface NavbarProps {
+    onGetStarted: () => void;
+}
+
+export default function Navbar({ onGetStarted }: NavbarProps) {
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -62,8 +66,8 @@ export default function Navbar() {
                                         key={link.label}
                                         href={link.href}
                                         className={`text-sm font-medium transition ${isActive
-                                                ? "text-blue-600"
-                                                : "text-slate-600 hover:text-blue-600"
+                                            ? "text-blue-600"
+                                            : "text-slate-600 hover:text-blue-600"
                                             }`}
                                     >
                                         {link.label}
@@ -75,38 +79,61 @@ export default function Navbar() {
 
                     <div className='hidden md:flex items-center gap-3'>
                         <Button>Sign-Up</Button>
-                        <Button variant='secondary'>Get Started</Button>
-
+                        <Button variant='secondary' onClick={onGetStarted}>Get Started</Button>
                     </div>
-                    <Button
+                    {/* mobile */}
+                    <button
                         type="button"
-                        className="md:hidden"
-                        aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                        {isMenuOpen ? <LuX /> : <LuMenu />}
-                    </Button>
+                        onClick={() => setIsMenuOpen((prev) => !prev)}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-50 md:hidden"
+                        aria-label="Toggle navigation"
+                        aria-expanded={isMenuOpen}
+                    >
+                        {isMenuOpen ? <LuX size={20} /> : <LuMenu size={20} />}
+                    </button>
                 </Container>
-                {isMenuOpen && (
-                    <div className="border-t border-slate-200 bg-white px-6 py-6 md:hidden">
-                        <ul className='flex flex-col items-center gap-6 py-6'>
-                            {navigationLinks.map((link) => (
-                                <li key={link.label}>
-                                    <a
-                                        href={link.href}
-                                        className="block w-full rounded-lg px-4 py-3 text-base font-semibold text-slate-700 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-600"
-                                        onClick={() => setIsMenuOpen(false)}>
-                                        {link.label}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
+                <div
+                    className={`overflow-hidden border-slate-200 bg-white transition-all duration-300 md:hidden ${isMenuOpen
+                        ? "max-h-[500px] border-t opacity-100"
+                        : "max-h-0 border-t-0 opacity-0"
+                        }`}
+                >
+                    <Container>
+                        <div className="py-4">
+                            <ul className="flex flex-col gap-1">
+                                {navigationLinks.map((link) => {
+                                    const sectionName = link.href.replace("#", "");
+                                    const isActive = activeSection === sectionName;
 
-                        <div className="flex flex-col gap-3 pb-6">
-                            <Button>Sign-Up</Button>
-                            <Button>Get Started</Button>
+                                    return (
+                                        <li key={link.label}>
+                                            <a
+                                                href={link.href}
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className={`block rounded-lg px-4 py-3 text-sm font-medium transition ${isActive
+                                                    ? "bg-blue-50 text-blue-600"
+                                                    : "text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+                                                    }`}
+                                            >
+                                                {link.label}
+                                            </a>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+                                <Button className="w-full">
+                                    Sign-Up
+                                </Button>
+
+                                <Button onClick={onGetStarted} variant="secondary" className="w-full">
+                                    Get Started
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    </Container>
+                </div>
             </nav>
         </header>
     )

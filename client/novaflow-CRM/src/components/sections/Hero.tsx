@@ -1,32 +1,103 @@
-import Container from '../common/Container'
-import Button from '../ui/Buttons'
-import ProductPreview from './ProductPreview'
+import { motion } from "framer-motion";
+import Container from "../common/Container";
+import Button from "../ui/Buttons";
+import ProductPreview from "./ProductPreview";
+import { LuArrowRight, LuSparkles } from "react-icons/lu";
 
-export default function Hero() {
+interface HeroProps {
+  onGetStarted: () => void;
+}
+
+export default function Hero({ onGetStarted }: HeroProps) {
   return (
-    <section className="py-24">
+    <section className="relative overflow-hidden bg-white py-20 md:py-28">
+      {/* background glow */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-blue-100/60 blur-3xl" />
+      </div>
+
       <Container>
-        <div className="text-center mx-auto max-w-2xl">
-          <span className="inline-flex rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600">Built for modern teams</span>
-          <h1 className='text-4xl md:text-6xl font-bold tracking-tight mt-6'>Run your business with clarity.</h1>
-          <p className='text-lg text-slate-600 mt-8'>Manage your workflow, customers, and team from one powerful workspace.</p>
+        <div className="mx-auto max-w-4xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700"
+          >
+            <LuSparkles size={16} />
+            Built for modern teams
+          </motion.div>
 
-          <div className="mt-8 flex flex-col gap-4 md:flex-row md:justify-center">
-            <Button className="w-full md:w-auto">
-              Get Started
-            </Button>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mt-6 text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl md:text-7xl"
+          >
+            Run your business
+            <span className="block text-blue-600">
+              with clarity.
+            </span>
+          </motion.h1>
 
-            <Button
-              variant="secondary"
-              className="w-full md:w-auto"
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600"
+          >
+            Manage your workflow, customers, projects, and team from one
+            powerful workspace built to keep your business moving.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
+          >
+            <a href="#get-started">
+              <Button onClick={onGetStarted} className="flex items-center gap-2">
+                Get Started
+                <LuArrowRight size={18} />
+              </Button>
+            </a>
+
+            <a href="#features">
+              <Button variant="secondary">
+                View Features
+              </Button>
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: 0.8,
+              delay: 0.4,
+              ease: "easeOut",
+            }}
+            className="relative mt-16"
+          >
+            {/* dashboard glow */}
+            <div className="absolute inset-x-16 bottom-0 top-16 -z-10 rounded-full bg-blue-200/50 blur-3xl" />
+
+            <motion.div
+              animate={{
+                y: [0, -8, 0],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
             >
-              View Features
-            </Button>
-          </div>
+              <ProductPreview />
+            </motion.div>
+          </motion.div>
         </div>
-
-        <ProductPreview className='mt-16' />
       </Container>
     </section>
-  )
+  );
 }

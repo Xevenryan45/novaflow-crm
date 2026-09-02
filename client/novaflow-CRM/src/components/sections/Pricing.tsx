@@ -1,6 +1,8 @@
 import Container from "../common/Container";
 import Reveal from "../common/Reveal";
 
+
+
 const plans = [
     {
         name: "Starter",
@@ -38,7 +40,11 @@ const plans = [
     },
 ];
 
-export default function Pricing() {
+interface PricingProps {
+    onGetStarted: () => void;
+}
+
+export default function Pricing({ onGetStarted }: PricingProps) {
     return (
         <section id="pricing" className="py-24">
             <Container>
@@ -62,8 +68,8 @@ export default function Pricing() {
                             <div
                                 key={plan.name}
                                 className={`relative rounded-2xl border p-6 ${plan.popular
-                                        ? "border-blue-600 shadow-lg"
-                                        : "border-slate-200 shadow-sm"
+                                    ? "border-blue-600 shadow-lg"
+                                    : "border-slate-200 shadow-sm"
                                     }`}
                             >
                                 {plan.popular && (
@@ -86,10 +92,11 @@ export default function Pricing() {
                                 </div>
 
                                 <button
+                                    onClick={onGetStarted}
                                     type="button"
                                     className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-medium transition ${plan.popular
-                                            ? "bg-blue-600 text-white hover:bg-blue-700"
-                                            : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
                                         }`}
                                 >
                                     {plan.price === "$0" ? "Get Started" : "Start Free Trial"}

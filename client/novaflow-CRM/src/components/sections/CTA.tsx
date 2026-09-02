@@ -2,7 +2,11 @@ import Container from "../common/Container";
 import { LuArrowRight } from "react-icons/lu";
 import Reveal from "../common/Reveal";
 
-export default function CTA() {
+interface CTAProps {
+    onGetStarted: () => void;
+}
+
+export default function CTA({ onGetStarted }: CTAProps) {
     return (
         <section id="get-started" className="py-24">
             <Container>
@@ -24,6 +28,7 @@ export default function CTA() {
                         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
                             <button>
                                 <a
+                                    onClick={onGetStarted}
                                     href="#pricing"
                                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
                                 >

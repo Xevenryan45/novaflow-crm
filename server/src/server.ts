@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes";
 import db from "./config/db";
+import customerRoutes from "./routes/customerRoutes";
 
 dotenv.config();
 
@@ -17,19 +18,26 @@ app.use(
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/customers", customerRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {
     await db.query("SELECT 1");
 
-    res.json({
+    return res.json({
       status: "ok",
       database: "connected",
     });
-  } catch {
-    res.status(500).json({
+  } catch (error) {
+    console.error("DATABASE ERROR:", error);
+
+    return res.status(500).json({
       status: "error",
       database: "disconnected",
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
     });
   }
 });

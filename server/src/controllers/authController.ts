@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import type { AuthRequest } from "../middleware/authMiddleware";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import db from "../config/db";
@@ -108,6 +109,40 @@ export async function login(req: Request, res: Response) {
         role: user.role,
       },
       token,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Server error",
+    });
+  }
+}
+
+export async function getMe(
+  req: AuthRequest,
+  res: Response
+) {
+  try {
+    const [rows] = await db.query(
+      `
+      SELECT id, name, email, role, created_at
+      FROM users
+      WHERE id = ?
+      `,
+      [req.userId]
+    );
+
+    const users = rows as any[];
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      user: users[0],
     });
   } catch (error) {
     console.error(error);

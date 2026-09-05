@@ -11,20 +11,25 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (
+        e: React.FormEvent<HTMLFormElement>
+      ) => {
         e.preventDefault();
-
+        setError("");
+      
         try {
-            login(email, password);
-            navigate("/dashboard");
+          await login(email, password);
+      
+          navigate("/dashboard");
         } catch (error) {
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "Unable to sign in."
-            );
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to sign in."
+          );
         }
-    };
+      };
+      
     return (
         <main className="min-h-screen bg-slate-50">
             <div className="grid min-h-screen lg:grid-cols-2">

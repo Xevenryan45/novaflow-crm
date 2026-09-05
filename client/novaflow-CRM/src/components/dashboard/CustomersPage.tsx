@@ -1,48 +1,33 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  createCustomer,
+  deleteCustomer,
+  fetchCustomers,
+  type Customer,
+  type CustomerPlan,
+} from "../../services/customers";
+
 import {
   LuPlus,
   LuSearch,
   LuX,
 } from "react-icons/lu";
 
-const initialCustomers = [
-  {
-    id: 1,
-    name: "Acme Inc.",
-    email: "team@acme.com",
-    plan: "Business",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Bright Labs",
-    email: "hello@brightlabs.io",
-    plan: "Professional",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Northstar",
-    email: "ops@northstar.com",
-    plan: "Starter",
-    status: "Trial",
-  },
-  {
-    id: 4,
-    name: "Vertex Studio",
-    email: "team@vertex.com",
-    plan: "Professional",
-    status: "Inactive",
-  },
-];
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    plan: CustomerPlan;
+  }>({
     name: "",
     email: "",
     plan: "Starter",
@@ -66,32 +51,81 @@ export default function CustomersPage() {
     });
   }, [customers, searchTerm, statusFilter]);
 
-  const handleSubmit = (
+  const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
 
     if (!formData.name || !formData.email) return;
 
-    setCustomers((prev) => [
-      {
-        id: Date.now(),
+    try {
+      setError("");
+
+      const newCustomer = await createCustomer({
         name: formData.name,
         email: formData.email,
         plan: formData.plan,
-        status: "Active",
-      },
-      ...prev,
-    ]);
+      });
 
-    setFormData({
-      name: "",
-      email: "",
-      plan: "Starter",
-    });
+      setCustomers((prev) => [
+        newCustomer,
+        ...prev,
+      ]);
 
-    setShowModal(false);
+      setFormData({
+        name: "",
+        email: "",
+        plan: "Starter",
+      });
+
+      setShowModal(false);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create customer"
+      );
+    }
   };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteCustomer(id);
+
+      setCustomers((prev) =>
+        prev.filter((customer) => customer.id !== id)
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete customer"
+      );
+    }
+  };
+
+  useEffect(() => {
+    const loadCustomers = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const data = await fetchCustomers();
+
+        setCustomers(data);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load customers"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCustomers();
+  }, []);
 
   return (
     <div>
@@ -153,64 +187,87 @@ export default function CustomersPage() {
           </select>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
-              <tr>
-                <th className="px-6 py-3 font-medium">
-                  Customer
-                </th>
-                <th className="px-6 py-3 font-medium">
-                  Plan
-                </th>
-                <th className="px-6 py-3 font-medium">
-                  Status
-                </th>
-                <th className="px-6 py-3 font-medium">
-                  Action
-                </th>
-              </tr>
-            </thead>
+        {error && (
+          <div className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
-            <tbody className="divide-y divide-slate-100">
-              {filteredCustomers.map((customer) => (
-                <tr
-                  key={customer.id}
-                  className="transition hover:bg-slate-50"
-                >
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-semibold text-slate-800">
-                      {customer.name}
-                    </p>
+        {isLoading ? (
+          <div className="px-6 py-16 text-center text-sm text-slate-400">
+            Loading customers...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-400">
+                <tr>
+                  <th className="px-6 py-3 font-medium">
+                    Customer
+                  </th>
 
-                    <p className="mt-1 text-xs text-slate-400">
-                      {customer.email}
-                    </p>
-                  </td>
+                  <th className="px-6 py-3 font-medium">
+                    Plan
+                  </th>
 
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {customer.plan}
-                  </td>
+                  <th className="px-6 py-3 font-medium">
+                    Status
+                  </th>
 
-                  <td className="px-6 py-4">
-                    <StatusBadge
-                      status={customer.status}
-                    />
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      className="text-sm font-medium text-blue-600 hover:text-blue-700"
-                    >
-                      View
-                    </button>
-                  </td>
+                  <th className="px-6 py-3 font-medium">
+                    Action
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+                {filteredCustomers.map((customer) => (
+                  <tr
+                    key={customer.id}
+                    className="transition hover:bg-slate-50"
+                  >
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {customer.name}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {customer.email}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {customer.plan}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <StatusBadge status={customer.status} />
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          View
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(customer.id)}
+                          className="text-sm font-medium text-red-500 hover:text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {filteredCustomers.length === 0 && (
           <div className="px-6 py-14 text-center">
@@ -319,7 +376,7 @@ export default function CustomersPage() {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      plan: e.target.value,
+                      plan: e.target.value as CustomerPlan,
                     })
                   }
                   className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
@@ -367,10 +424,9 @@ function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-        styles[status as keyof typeof styles] ??
+      className={`rounded-full px-2.5 py-1 text-xs font-medium ${styles[status as keyof typeof styles] ??
         "bg-slate-100 text-slate-500"
-      }`}
+        }`}
     >
       {status}
     </span>

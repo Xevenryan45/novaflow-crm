@@ -12,20 +12,24 @@ export default function SignUpPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (
+        e: React.FormEvent<HTMLFormElement>
+      ) => {
         e.preventDefault();
-
+        setError("");
+      
         try {
-            signup(name, email, password);
-            navigate("/dashboard");
+          await signup(name, email, password);
+      
+          navigate("/dashboard");
         } catch (error) {
-            setError(
-                error instanceof Error
-                    ? error.message
-                    : "Unable to create account."
-            );
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Unable to create account."
+          );
         }
-    };
+      };
 
     return (
         <main className="min-h-screen bg-slate-50">
@@ -63,7 +67,7 @@ export default function SignUpPage() {
                             </p>
                         </div>
 
-                        <form className="mt-8 space-y-5">
+                        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
 
                             <div>
                                 <label className="text-sm font-medium text-slate-700">

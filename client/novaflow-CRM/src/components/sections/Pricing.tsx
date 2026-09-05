@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import Container from "../common/Container";
 import Reveal from "../common/Reveal";
 
@@ -40,11 +41,9 @@ const plans = [
     },
 ];
 
-interface PricingProps {
-    onGetStarted: () => void;
-}
 
-export default function Pricing({ onGetStarted }: PricingProps) {
+
+export default function Pricing() {
     return (
         <section id="pricing" className="py-24">
             <Container>
@@ -91,16 +90,14 @@ export default function Pricing({ onGetStarted }: PricingProps) {
                                     )}
                                 </div>
 
-                                <button
-                                    onClick={onGetStarted}
+                                <Link
+                                    to='/signup'
                                     type="button"
                                     className={`mt-6 w-full rounded-lg px-4 py-3 text-sm font-medium transition ${plan.popular
                                         ? "bg-blue-600 text-white hover:bg-blue-700"
-                                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"
-                                        }`}
-                                >
+                                        : "border border-slate-200 text-slate-700 hover:bg-slate-50"}`}                                >
                                     {plan.price === "$0" ? "Get Started" : "Start Free Trial"}
-                                </button>
+                                </Link>
 
                                 <div className="mt-8 space-y-3">
                                     {plan.features.map((feature) => (

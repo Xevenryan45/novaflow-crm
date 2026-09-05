@@ -23,17 +23,17 @@ export default function HomePage() {
 
   return (
     <>
-      <Navbar onGetStarted={openGetStarted} />
+      <Navbar />
 
-      <Hero onGetStarted={openGetStarted} />
+      <Hero />
 
       <Stats />
 
-      <Pricing onGetStarted={openGetStarted} />
+      <Pricing />
 
       <Testimonials />
 
-      <CTA onGetStarted={openGetStarted} />
+      <CTA />
 
       <FAQ />
 

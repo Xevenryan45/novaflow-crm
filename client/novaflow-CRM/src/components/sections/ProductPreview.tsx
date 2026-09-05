@@ -18,7 +18,6 @@ import {
     LuMousePointerClick,
     LuClock3,
     LuUserPlus,
-    LuUserCheck,
     LuUserRoundCheck,
     LuFolderOpen,
     LuCircleCheck,

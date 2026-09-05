@@ -1,12 +1,11 @@
 import Container from "../common/Container";
 import { LuArrowRight } from "react-icons/lu";
 import Reveal from "../common/Reveal";
+import { Link } from "react-router-dom";
 
-interface CTAProps {
-    onGetStarted: () => void;
-}
 
-export default function CTA({ onGetStarted }: CTAProps) {
+
+export default function CTA() {
     return (
         <section id="get-started" className="py-24">
             <Container>
@@ -26,16 +25,15 @@ export default function CTA({ onGetStarted }: CTAProps) {
                         </p>
 
                         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-                            <button>
-                                <a
-                                    onClick={onGetStarted}
-                                    href="#pricing"
-                                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
-                                >
-                                    Get Started
-                                    <LuArrowRight size={18} />
-                                </a>
-                            </button>
+
+                            <Link
+                                to="/signup"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+                            >
+                                Get Started
+                                <LuArrowRight size={18} />
+                            </Link>
+
 
                             <button>
                                 <a

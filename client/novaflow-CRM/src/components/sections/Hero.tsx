@@ -3,12 +3,11 @@ import Container from "../common/Container";
 import Button from "../ui/Buttons";
 import ProductPreview from "./ProductPreview";
 import { LuArrowRight, LuSparkles } from "react-icons/lu";
+import { Link } from "react-router-dom";
 
-interface HeroProps {
-  onGetStarted: () => void;
-}
 
-export default function Hero({ onGetStarted }: HeroProps) {
+
+export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-white py-20 md:py-28">
       {/* background glow */}
@@ -56,12 +55,12 @@ export default function Hero({ onGetStarted }: HeroProps) {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
           >
-            <a href="#get-started">
-              <Button onClick={onGetStarted} className="flex items-center gap-2">
+            <Link to="/signup">
+              <Button className="flex items-center gap-2">
                 Get Started
                 <LuArrowRight size={18} />
               </Button>
-            </a>
+            </Link>
 
             <a href="#features">
               <Button variant="secondary">

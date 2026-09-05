@@ -5,12 +5,11 @@ import { navigationLinks } from '../../constants/navigation'
 import Button from '../ui/Buttons'
 import { useState, useEffect } from 'react'
 import { LuMenu, LuX } from 'react-icons/lu'
+import { Link } from "react-router-dom";
 
-interface NavbarProps {
-    onGetStarted: () => void;
-}
 
-export default function Navbar({ onGetStarted }: NavbarProps) {
+
+export default function Navbar() {
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -77,10 +76,20 @@ export default function Navbar({ onGetStarted }: NavbarProps) {
                         </ul>
                     </div>
 
-                    <div className='hidden md:flex items-center gap-3'>
-                        <Button>Sign-Up</Button>
-                        <Button variant='secondary' onClick={onGetStarted}>Get Started</Button>
+                    <div className="hidden items-center gap-3 md:flex">
+                        <Link to="/login">
+                            <Button>
+                                Sign In
+                            </Button>
+                        </Link>
+
+                        <Link to="/signup">
+                            <Button variant="secondary">
+                                Get Started
+                            </Button>
+                        </Link>
                     </div>
+
                     {/* mobile */}
                     <button
                         type="button"
@@ -123,13 +132,26 @@ export default function Navbar({ onGetStarted }: NavbarProps) {
                             </ul>
 
                             <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-                                <Button className="w-full">
-                                    Sign-Up
-                                </Button>
+                                <Link
+                                    to="/login"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    <Button className="w-full">
+                                        Sign In
+                                    </Button>
+                                </Link>
 
-                                <Button onClick={onGetStarted} variant="secondary" className="w-full">
-                                    Get Started
-                                </Button>
+                                <Link
+                                    to="/signup"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    <Button
+                                        variant="secondary"
+                                        className="w-full"
+                                    >
+                                        Get Started
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
                     </Container>

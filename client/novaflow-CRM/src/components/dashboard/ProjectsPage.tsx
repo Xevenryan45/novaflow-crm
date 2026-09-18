@@ -1,4 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  createProject,
+  deleteProject,
+  fetchProjects,
+  updateProject,
+  type Project,
+  type ProjectStatus,
+} from "../../services/projects";
+
+import {
+  fetchCustomers,
+  type Customer,
+} from "../../services/customers";
+
 import {
   LuPlus,
   LuSearch,
@@ -6,109 +21,216 @@ import {
   LuX,
 } from "react-icons/lu";
 
-type ProjectStatus = "Planning" | "In Progress" | "Review" | "Completed";
 
-interface Project {
-  id: number;
-  name: string;
-  client: string;
-  progress: number;
-  status: ProjectStatus;
-  deadline: string;
-}
-
-const initialProjects: Project[] = [
-  {
-    id: 1,
-    name: "Website Redesign",
-    client: "Acme Inc.",
-    progress: 78,
-    status: "In Progress",
-    deadline: "Sep 18, 2026",
-  },
-  {
-    id: 2,
-    name: "Mobile App",
-    client: "Bright Labs",
-    progress: 54,
-    status: "In Progress",
-    deadline: "Oct 04, 2026",
-  },
-  {
-    id: 3,
-    name: "CRM Migration",
-    client: "Northstar",
-    progress: 92,
-    status: "Review",
-    deadline: "Sep 12, 2026",
-  },
-  {
-    id: 4,
-    name: "Brand Strategy",
-    client: "Vertex Studio",
-    progress: 100,
-    status: "Completed",
-    deadline: "Aug 28, 2026",
-  },
-];
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [showModal, setShowModal] = useState(false);
+  const [editingProject, setEditingProject] =
+    useState<Project | null>(null);
+
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    customerId: "",
+    deadline: "",
+    status: "Planning" as ProjectStatus,
+    progress: 0,
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError("");
+
+        const [projectsData, customersData] = await Promise.all([
+          fetchProjects(),
+          fetchCustomers(),
+        ]);
+
+        setProjects(projectsData);
+        setCustomers(customersData);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Unable to load project data"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const [formData, setFormData] = useState({
     name: "",
-    client: "",
+    customerId: "",
     deadline: "",
   });
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
       const matchesSearch =
-        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.client.toLowerCase().includes(searchTerm.toLowerCase());
+        project.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (project.customer_name ?? "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "All" || project.status === statusFilter;
+        statusFilter === "All" ||
+        project.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [projects, searchTerm, statusFilter]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
-    if (!formData.name || !formData.client || !formData.deadline) return;
+    if (!formData.name || !formData.deadline) return;
 
-    const formattedDeadline = new Date(
-      `${formData.deadline}T00:00:00`
-    ).toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
+    try {
+      setError("");
 
-    const newProject: Project = {
-      id: Date.now(),
-      name: formData.name,
-      client: formData.client,
-      progress: 0,
-      status: "Planning",
-      deadline: formattedDeadline,
-    };
+      const newProject = await createProject({
+        name: formData.name,
+        customerId: formData.customerId
+          ? Number(formData.customerId)
+          : null,
+        deadline: formData.deadline,
+        status: "Planning",
+        progress: 0,
+      });
 
-    setProjects((prev) => [newProject, ...prev]);
+      setProjects((prev) => [
+        newProject,
+        ...prev,
+      ]);
 
-    setFormData({
-      name: "",
-      client: "",
-      deadline: "",
-    });
+      setFormData({
+        name: "",
+        customerId: "",
+        deadline: "",
+      });
 
-    setShowModal(false);
+      setShowModal(false);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create project"
+      );
+    }
   };
+
+  const handleDelete = async (id: number) => {
+    try {
+      setError("");
+
+      await deleteProject(id);
+
+      setProjects((prev) =>
+        prev.filter((project) => project.id !== id)
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete project"
+      );
+    }
+  };
+
+  const handleComplete = async (id: number) => {
+    try {
+      const updated = await updateProject(id, {
+        status: "Completed",
+        progress: 100,
+      });
+
+      setProjects((prev) =>
+        prev.map((project) =>
+          project.id === id ? updated : project
+        )
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update project"
+      );
+    }
+  };
+
+  const handleEditClick = (project: Project) => {
+    setEditingProject(project);
+
+    setEditFormData({
+      name: project.name,
+      customerId: project.customer_id
+        ? String(project.customer_id)
+        : "",
+      deadline: project.deadline
+        ? project.deadline.split("T")[0]
+        : "",
+      status: project.status,
+      progress: project.progress,
+    });
+  };
+
+  const handleUpdateSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!editingProject) return;
+
+    try {
+      setError("");
+
+      const updated = await updateProject(
+        editingProject.id,
+        {
+          name: editFormData.name,
+          customerId: editFormData.customerId
+            ? Number(editFormData.customerId)
+            : null,
+          deadline: editFormData.deadline || null,
+          status: editFormData.status,
+          progress: editFormData.progress,
+        }
+      );
+
+      setProjects((prev) =>
+        prev.map((project) =>
+          project.id === updated.id
+            ? updated
+            : project
+        )
+      );
+
+      setEditingProject(null);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update project"
+      );
+    }
+  };
+
 
   return (
     <div>
@@ -164,57 +286,96 @@ export default function ProjectsPage() {
         </select>
       </div>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {filteredProjects.map((project) => (
-          <div
-            key={project.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-semibold text-slate-900">
-                  {project.name}
-                </h2>
+      {error && (
+        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {project.client}
-                </p>
+      {isLoading ? (
+        <div className="mt-8 py-16 text-center text-sm text-slate-400">
+          Loading projects...
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {filteredProjects.map((project) => (
+            <div
+              key={project.id}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-slate-900">
+                    {project.name}
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    {project.customer_name ?? "No client assigned"}
+                  </p>
+                </div>
+
+                <StatusBadge status={project.status} />
               </div>
 
-              <StatusBadge status={project.status} />
-            </div>
+              <div className="mt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-500">
+                    Progress
+                  </span>
 
-            <div className="mt-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">
-                  Progress
-                </span>
+                  <span className="text-xs font-semibold text-slate-700">
+                    {project.progress}%
+                  </span>
+                </div>
 
-                <span className="text-xs font-semibold text-slate-700">
-                  {project.progress}%
-                </span>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-blue-600 transition-all"
+                    style={{
+                      width: `${project.progress}%`,
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className="h-full rounded-full bg-blue-600 transition-all"
-                  style={{
-                    width: `${project.progress}%`,
-                  }}
-                />
+              <div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
+                <LuCalendarDays size={15} />
+                <span>Deadline: {project.deadline ?? "No deadline"}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleEditClick(project)}
+                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+              >
+                Edit
+              </button>
+
+              <div className="mt-4 flex items-center gap-4">
+                {project.status !== "Completed" && (
+                  <button
+                    type="button"
+                    onClick={() => handleComplete(project.id)}
+                    className="text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                  >
+                    Mark Complete
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleDelete(project.id)}
+                  className="text-xs font-medium text-red-500 hover:text-red-600"
+                >
+                  Delete
+                </button>
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            <div className="mt-6 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
-              <LuCalendarDays size={15} />
-
-              <span>Deadline: {project.deadline}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && (
+      {!isLoading && filteredProjects.length === 0 && (
         <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
           <p className="font-medium text-slate-700">
             No projects found
@@ -274,18 +435,29 @@ export default function ProjectsPage() {
                   Client
                 </label>
 
-                <input
-                  type="text"
-                  value={formData.client}
+                <select
+                  value={formData.customerId}
                   onChange={(event) =>
                     setFormData({
                       ...formData,
-                      client: event.target.value,
+                      customerId: event.target.value,
                     })
                   }
-                  placeholder="Acme Inc."
-                  className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">
+                    No client assigned
+                  </option>
+
+                  {customers.map((customer) => (
+                    <option
+                      key={customer.id}
+                      value={customer.id}
+                    >
+                      {customer.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -320,6 +492,167 @@ export default function ProjectsPage() {
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                 >
                   Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setEditingProject(null)}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-800"
+            >
+              <LuX size={19} />
+            </button>
+
+            <h2 className="text-xl font-bold text-slate-900">
+              Edit Project
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Update project details and progress.
+            </p>
+
+            <form
+              onSubmit={handleUpdateSubmit}
+              className="mt-6 space-y-4"
+            >
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Project name
+                </label>
+
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(event) =>
+                    setEditFormData({
+                      ...editFormData,
+                      name: event.target.value,
+                    })
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Client
+                </label>
+
+                <select
+                  value={editFormData.customerId}
+                  onChange={(event) =>
+                    setEditFormData({
+                      ...editFormData,
+                      customerId: event.target.value,
+                    })
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="">
+                    No client assigned
+                  </option>
+
+                  {customers.map((customer) => (
+                    <option
+                      key={customer.id}
+                      value={customer.id}
+                    >
+                      {customer.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Status
+                </label>
+
+                <select
+                  value={editFormData.status}
+                  onChange={(event) =>
+                    setEditFormData({
+                      ...editFormData,
+                      status:
+                        event.target.value as ProjectStatus,
+                    })
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                >
+                  <option value="Planning">
+                    Planning
+                  </option>
+                  <option value="In Progress">
+                    In Progress
+                  </option>
+                  <option value="Review">
+                    Review
+                  </option>
+                  <option value="Completed">
+                    Completed
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Progress: {editFormData.progress}%
+                </label>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={editFormData.progress}
+                  onChange={(event) =>
+                    setEditFormData({
+                      ...editFormData,
+                      progress: Number(event.target.value),
+                    })
+                  }
+                  className="mt-3 w-full"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Deadline
+                </label>
+
+                <input
+                  type="date"
+                  value={editFormData.deadline}
+                  onChange={(event) =>
+                    setEditFormData({
+                      ...editFormData,
+                      deadline: event.target.value,
+                    })
+                  }
+                  className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingProject(null)}
+                  className="flex-1 rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

@@ -5,6 +5,13 @@ import {
     LuTrendingUp,
 } from "react-icons/lu";
 
+import { useEffect, useState } from "react";
+
+import {
+    fetchDashboardSummary,
+    type DashboardSummary,
+} from "../../services/dashboard";
+
 import {
     LineChart,
     Line,
@@ -24,67 +31,58 @@ const revenueData = [
     { month: "Jun", revenue: 27000 },
 ];
 
-const projects = [
-    {
-        name: "Website Redesign",
-        progress: 78,
-        status: "In Progress",
-    },
-    {
-        name: "Mobile App",
-        progress: 54,
-        status: "In Progress",
-    },
-    {
-        name: "CRM Migration",
-        progress: 92,
-        status: "Review",
-    },
-];
-
-const customers = [
-    {
-        name: "Acme Inc.",
-        email: "team@acme.com",
-        plan: "Business",
-        status: "Active",
-    },
-    {
-        name: "Bright Labs",
-        email: "hello@brightlabs.io",
-        plan: "Professional",
-        status: "Active",
-    },
-    {
-        name: "Northstar",
-        email: "ops@northstar.com",
-        plan: "Starter",
-        status: "Trial",
-    },
-];
-
-const stats = [
-    {
-        label: "Total Revenue",
-        value: "$24,500",
-        change: "+12.5%",
-        icon: LuDollarSign,
-    },
-    {
-        label: "Customers",
-        value: "1,248",
-        change: "+8.2%",
-        icon: LuUsers,
-    },
-    {
-        label: "Active Projects",
-        value: "32",
-        change: "+6.7%",
-        icon: LuFolderKanban,
-    },
-];
-
 export default function DashboardHomePage() {
+
+    const [dashboardData, setDashboardData] =
+        useState<DashboardSummary | null>(null);
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const loadDashboard = async () => {
+            try {
+                setIsLoading(true);
+                setError("");
+
+                const data = await fetchDashboardSummary();
+
+                setDashboardData(data);
+            } catch (error) {
+                setError(
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to load dashboard"
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadDashboard();
+    }, []);
+
+    const stats = [
+        {
+            label: "Customers",
+            value: dashboardData?.customers ?? 0,
+            change: "Live",
+            icon: LuUsers,
+        },
+        {
+            label: "Total Projects",
+            value: dashboardData?.projects ?? 0,
+            change: "Live",
+            icon: LuFolderKanban,
+        },
+        {
+            label: "Active Projects",
+            value: dashboardData?.activeProjects ?? 0,
+            change: "Live",
+            icon: LuTrendingUp,
+        },
+    ];
+
     return (
         <div>
             {/* Heading */}
@@ -101,6 +99,18 @@ export default function DashboardHomePage() {
                     Here's what's happening with your business today.
                 </p>
             </div>
+
+            {isLoading && (
+                <div className="mt-6 rounded-xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                    Loading dashboard...
+                </div>
+            )}
+
+            {error && (
+                <div className="mt-6 rounded-xl bg-red-50 px-4 py-4 text-sm text-red-600">
+                    {error}
+                </div>
+            )}
 
             {/* Stats */}
             <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -256,7 +266,7 @@ export default function DashboardHomePage() {
                 </div>
 
                 <div className="mt-6 space-y-6">
-                    {projects.map((project) => (
+                    {dashboardData?.recentProjects.map((project) => (
                         <div key={project.name}>
                             <div className="flex items-center justify-between">
                                 <div>
@@ -326,9 +336,9 @@ export default function DashboardHomePage() {
                         </thead>
 
                         <tbody className="divide-y divide-slate-100">
-                            {customers.map((customer) => (
+                            {dashboardData?.recentCustomers.map((customer) => (
                                 <tr
-                                    key={customer.email}
+                                    key={customer.id}
                                     className="transition hover:bg-slate-50"
                                 >
                                     <td className="px-6 py-4">
@@ -348,8 +358,8 @@ export default function DashboardHomePage() {
                                     <td className="px-6 py-4">
                                         <span
                                             className={`rounded-full px-2.5 py-1 text-xs font-medium ${customer.status === "Active"
-                                                    ? "bg-emerald-50 text-emerald-600"
-                                                    : "bg-amber-50 text-amber-600"
+                                                ? "bg-emerald-50 text-emerald-600"
+                                                : "bg-amber-50 text-amber-600"
                                                 }`}
                                         >
                                             {customer.status}

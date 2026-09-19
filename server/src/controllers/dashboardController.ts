@@ -83,6 +83,21 @@ export async function getDashboardSummary(
       [userId]
     );
 
+    const [recentActivity] = await db.query<any[]>(
+      `
+      SELECT
+        id,
+        type,
+        message,
+        created_at
+      FROM activities
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 6
+      `,
+      [userId]
+    );
+
     return res.json({
       customers: customerCount.total,
       projects: projectCount.total,
@@ -90,6 +105,7 @@ export async function getDashboardSummary(
       completedProjects: completedProjectCount.total,
       recentProjects,
       recentCustomers,
+      recentActivity,
     });
   } catch (error) {
     console.error("DASHBOARD ERROR:", error);

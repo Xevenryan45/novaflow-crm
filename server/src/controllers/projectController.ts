@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import db from "../config/db";
 import type { AuthRequest } from "../middleware/authMiddleware";
+import { logActivity } from "../services/activityService";
 
 export async function getProjects(
   req: AuthRequest,
@@ -124,6 +125,12 @@ export async function createProject(
       [projectId, req.userId]
     );
 
+    await logActivity(
+      req.userId!,
+      "project_created",
+      `Project ${name} was created`
+    );
+
     return res.status(201).json({
       project: (rows as any[])[0],
     });
@@ -142,6 +149,7 @@ export async function updateProject(
 ) {
   try {
     const { id } = req.params;
+
     const {
       name,
       customerId,
@@ -152,14 +160,16 @@ export async function updateProject(
 
     const [existing] = await db.query(
       `
-      SELECT id
+      SELECT id, name, status
       FROM projects
       WHERE id = ? AND user_id = ?
       `,
       [id, req.userId]
     );
 
-    if ((existing as any[]).length === 0) {
+    const existingProjects = existing as any[];
+
+    if (existingProjects.length === 0) {
       return res.status(404).json({
         message: "Project not found",
       });
@@ -215,8 +225,27 @@ export async function updateProject(
       [id, req.userId]
     );
 
+    const updatedProject = (rows as any[])[0];
+
+    if (
+      status === "Completed" &&
+      existingProjects[0].status !== "Completed"
+    ) {
+      await logActivity(
+        req.userId!,
+        "project_completed",
+        `Project ${updatedProject.name} was completed`
+      );
+    } else {
+      await logActivity(
+        req.userId!,
+        "project_updated",
+        `Project ${updatedProject.name} was updated`
+      );
+    }
+
     return res.json({
-      project: (rows as any[])[0],
+      project: updatedProject,
     });
   } catch (error) {
     console.error(error);
@@ -234,7 +263,26 @@ export async function deleteProject(
   try {
     const { id } = req.params;
 
-    const [result] = await db.query(
+    const [rows] = await db.query(
+      `
+      SELECT id, name
+      FROM projects
+      WHERE id = ? AND user_id = ?
+      `,
+      [id, req.userId]
+    );
+
+    const projects = rows as any[];
+
+    if (projects.length === 0) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    const projectName = projects[0].name;
+
+    await db.query(
       `
       DELETE FROM projects
       WHERE id = ? AND user_id = ?
@@ -242,11 +290,11 @@ export async function deleteProject(
       [id, req.userId]
     );
 
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({
-        message: "Project not found",
-      });
-    }
+    await logActivity(
+      req.userId!,
+      "project_deleted",
+      `Project ${projectName} was deleted`
+    );
 
     return res.json({
       message: "Project deleted",

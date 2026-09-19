@@ -7,6 +7,7 @@ import customerRoutes from "./routes/customerRoutes";
 import projectRoutes from "./routes/projectRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
 import analyticsRoutes from "./routes/analyticsRoutes";
+import settingsRoutes from "./routes/settingsRoutes";
 dotenv.config();
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/settings", settingsRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {

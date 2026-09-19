@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import db from "../config/db";
 import type { AuthRequest } from "../middleware/authMiddleware";
+import { logActivity } from "../services/activityService";
 
 export async function getCustomers(
   req: AuthRequest,
@@ -127,12 +128,18 @@ export async function createCustomer(
         status,
         created_at
       FROM customers
-      WHERE id = ?
+      WHERE id = ? AND user_id = ?
       `,
-      [customerId]
+      [customerId, req.userId]
     );
 
     const customers = rows as any[];
+
+    await logActivity(
+      req.userId!,
+      "customer_created",
+      `New customer ${name} was added`
+    );
 
     return res.status(201).json({
       customer: customers[0],
@@ -223,7 +230,27 @@ export async function deleteCustomer(
   try {
     const { id } = req.params;
 
-    const [result] = await db.query(
+    // First get the customer so we know the name
+    const [customerRows] = await db.query(
+      `
+      SELECT id, name
+      FROM customers
+      WHERE id = ? AND user_id = ?
+      `,
+      [id, req.userId]
+    );
+
+    const customers = customerRows as any[];
+
+    if (customers.length === 0) {
+      return res.status(404).json({
+        message: "Customer not found",
+      });
+    }
+
+    const customerName = customers[0].name;
+
+    await db.query(
       `
       DELETE FROM customers
       WHERE id = ? AND user_id = ?
@@ -231,11 +258,11 @@ export async function deleteCustomer(
       [id, req.userId]
     );
 
-    if ((result as any).affectedRows === 0) {
-      return res.status(404).json({
-        message: "Customer not found",
-      });
-    }
+    await logActivity(
+      req.userId!,
+      "customer_deleted",
+      `Customer ${customerName} was deleted`
+    );
 
     return res.json({
       message: "Customer deleted",
